@@ -129,3 +129,50 @@ For more details about blockchain applications, you can refer to Daniel Palmer's
 **Smart contracts** are simply computer programs that execute predefined actions when certain conditions within the system are met. Smart contracts provide the **language of transactions** that allow the ledger state to be modified. They can facilitate the exchange and transfer of anything of value (e.g. shares, money, content, property).
 
 ![Smart Contracts](https://prod-edxapp.edx-cdn.org/assets/courseware/v1/ec30b3736f17bdbbc1a7bc6e08380094/asset-v1:LinuxFoundationX+LFS171x+3T2017+type@asset+block/Blockchain_and_Smar_Contracts_-_Flow_Diagram.png)
+
+Understanding Hyperledger Sawtooth — Proof of Elapsed Time
+Sawtooth, like Fabric, is a permissioned blockchain network technology. The network is called permissioned because prospective participants must identify themselves to the network, and the network can decide whether to let them participate. Once in the network, participants share a view of the blockchain ledger. The network uses a consensus algorithm to make sure all participants see identical ledgers.
+
+Consensus algorithms come in different forms. For example, Bitcoin uses a proof-of-work system. Members of the Bitcoin network compete to solve a cryptographic puzzle that identifies the solver as the new leader — the authoritative party for the new block on the blockchain. It’s essentially a lottery for choosing who is responsible for adding the new block. Proof-of-stake is another lottery system, except the lottery is based on ownership of coin in the system. The more coin a participant owns, the more likely they are to be chosen as the leader for a new block.
+
+In addition to lottery-like systems, there are also other kinds of consensus algorithms. For example, permissioned blockchain networks like Sawtooth and Fabric can also use traditional Byzantine fault tolerance (BFT) algorithms, which are often based on voting.
+
+Sawtooth and Fabric are both designed to allow users to choose the consensus algorithm for their blockchain network. Today, we’ll look at a lottery-like algorithm used with Hyperledger Sawtooth called proof-of-elapsed-time.
+
+Proof of Elapsed Time (PoET)
+At a high level, proof-of-elapsed-time follows this strategy:
+
+Each participant in the blockchain network waits a random amount of time.
+The first participant to finish waiting gets to be leader for the new block.
+In order for this to work, two requirements must be verified. First, did the lottery winner actually choose a random wait time? Otherwise, a participant could intentionally choose a short wait time in order to win. Second, did the lottery winner actually finish waiting the specified amount of time?
+
+PoET comes from Intel, and it relies on a special CPU instruction set called Intel Software Guard Extensions (SGX). SGX allows applications to run trusted code in a protected environment. For PoET, the trusted code is what ensures that these two requirements are satisfied — keeping the lottery fair.
+
+Intel SGX
+Before going into what PoET’s trusted code does, let’s understand some key points about SGX.
+
+A specialized hardware component can create an attestation that some particular trusted code was set up correctly in a protected environment. e.g. An external party can use the attestation to verify that the right code is running the right way.
+Trusted code runs in an environment that is private to the rest of the application. e.g. The rest of the application can’t inspect or interfere with the memory space of the trusted code.
+The first point allows a network participant to prove to other participants that it is running the right trusted code for the network. Without this feature, there’s no way for the network to know whether a participant is actually running the PoET trusted code.
+
+The second point ensures that a malicious participant can’t cheat by manipulating the PoET trusted code after it’s been set up.
+
+PoET’s trusted code
+The details of the protocol are somewhat complex, but here’s a simplified outline:
+
+Joining the network
+
+A new participant downloads the trusted code for the blockchain.
+On initialization, the trusted code creates a new keypair.
+Participant sends a SGX attestation (which includes the trusted code’s public key) to the rest of the network as part of a join request.
+Participating in the lottery
+
+Participant obtains a signed timer object from the trusted code.
+Participant waits for the time specified by the timer object.
+Participant obtains a certificate (signed by the trusted code’s private key) that the timer has completed. Participant sends this certificate to the rest of the network along with the new block for the blockchain.
+The protocol also involves other protections on top of SGX. For example, the network measures how often a given participant wins the lottery in order to detect participants with a compromised SGX system. Bad actors can then be blacklisted.
+
+Conclusion
+Hyperledger Sawtooth can use a proof-of-elapsed-time (PoET) consensus algorithm that leverages Intel’s Software Guard Extensions (SGX) to implement a leader-election lottery system. Instead of using computational effort to solve cryptographic puzzles (like Bitcoin), the system uses a trusted execution environment to generate random wait times—potentially a much more energy-efficient approach.
+
+To learn more about Sawtooth, including additional details about the PoET protocol, check out the project’s docs!
